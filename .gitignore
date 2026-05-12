@@ -1,0 +1,69 @@
+# ============================================================================
+# Cloud Prem app migrations — .gitignore
+#
+# Only project source should be committed:
+#   - README.md, CLAUDE.md, .gitignore
+#   - scripts/*.py  + scripts/*.sh        (SCIM scripts + CLI profile helper)
+#   - .claude/skills/<name>/SKILL.md      (Claude Code agent skills)
+#   - .cursor/skills/<name>/SKILL.md      (Cursor agent skills)
+#   - .cursor/rules/*.mdc                 (Cursor project-wide rules)
+#
+# Everything else — local config, secrets, pulled customer code, gap CSVs,
+# token files, AI-client session state, editor/OS noise — stays untracked.
+# ============================================================================
+
+# --- Local config + secrets (NEVER commit) ---
+.env
+.env.*
+
+# --- Token files referenced by --token-file flags on SCIM scripts ---
+*.token
+*-token
+*-token.txt
+
+# --- Superblocks CLI session state + pulled customer app code ---
+# pulled application YAML / configs (customer code)
+apps/
+# repo-root CLI metadata (app UUIDs, etc.)
+.superblocks/
+# the same metadata inside any apps/<app>/ directory
+**/.superblocks/
+# auth.json belongs under $HOME, never inside the repo
+**/auth.json
+
+# --- Migration artifacts written by Phase 1 scripts + Phase 2 integration skill ---
+# (gap CSVs carry real user emails, group names, integration UUIDs)
+migration-artifacts/
+
+# --- AI client workspace state — keep only skills + Cursor rules ---
+.claude/*
+!.claude/skills/
+!.claude/skills/**
+
+.cursor/*
+!.cursor/skills/
+!.cursor/skills/**
+!.cursor/rules/
+!.cursor/rules/**
+
+# --- Python script side-effects ---
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# --- OS / editor noise ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# --- Backup / temp files ---
+*.bak
+*.tmp
+*.old
