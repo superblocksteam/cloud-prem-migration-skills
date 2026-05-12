@@ -295,10 +295,10 @@ Use when the customer wants to migrate one app end-to-end at a time, when most i
     > Follow `.claude/skills/cloud-to-cloud-prem-app-migration/SKILL.md`.
 2. The skill walks you through, per app:
     - `sb_auth_profile cloud` → `superblocks pull` the source app.
-    - Confirm source vs target `application_mode` matches (hard blocker if not).
+    - Confirm the **Cloud Prem template app type** matches the source by **on-disk directory layout** — 3.0 / Fullstack App has `client/` + `server/` at the app root, 2.0 / Application does not. (Don't rely on `application_mode` from `get_application_structure` — it returns `2.0` for both types; the skill explains this in §3a.) Hard blocker if the user created the wrong type on Cloud Prem.
     - Rebind `.superblocks/superblocks.json` to the Cloud Prem application UUID.
     - Walk integration UUIDs **one at a time**: map to an existing Cloud Prem integration (§5b) **or** create a new one with placeholder credentials + `enabledForV2: true` and remap YAML (§5c). Each new integration requires its own explicit yes/no — there's no batch-create here, by design.
-    - `sb_auth_profile cloud_prem` → `superblocks upload` → optional `superblocks dev --upload-first` for live debug.
+    - `sb_auth_profile cloud_prem` → push the rebound app to Cloud Prem with either **`superblocks upload`** (one-shot) or **`superblocks dev --upload-first`** (upload + local dev server; run `npm install` in the app directory first if there's a `package.json`). The two commands sometimes fail to render the app on Cloud Prem on first try — if you upload, refresh the Cloud Prem UI, and the app doesn't show up, fall back to the **other** command and refresh again. Once the migration upload smoke-tests cleanly, the user can resume their normal dev loop.
 3. **Replace placeholder credentials in the Cloud Prem UI** for every integration the agent created. This is where most "the migrated app fails with a 401" reports come from.
 
 ### Which path should I pick?

@@ -19,7 +19,7 @@ This workflow configures **what users and groups can do** on **Cloud Prem** org 
 **Prerequisites**
 
 1. **Users and groups** exist on Cloud Prem and duplicate identities have been reconciled ([cloud-to-cloud-prem-users-groups-migration](../cloud-to-cloud-prem-users-groups-migration/SKILL.md)).
-2. **Target applications and integrations** exist on Cloud Prem with correct `application_mode` and remapped integration IDs ([cloud-to-cloud-prem-app-migration](../cloud-to-cloud-prem-app-migration/SKILL.md)).
+2. **Target applications and integrations** exist on Cloud Prem with the correct app type (Application vs Fullstack App — verified by on-disk `client/` + `server/` layout per §3a of the app-migration skill, **not** by `application_mode`) and remapped integration IDs ([cloud-to-cloud-prem-app-migration](../cloud-to-cloud-prem-app-migration/SKILL.md)).
 
 **Overall migration order (this repo)**
 
@@ -34,7 +34,7 @@ This workflow configures **what users and groups can do** on **Cloud Prem** org 
 | Superblocks Cloud (SaaS) | `https://app.superblocks.com/` (or regional SaaS URL) | **Cloud** MCP |
 | Cloud Prem | `https://<company>.superblocks.com/` | **Cloud Prem** MCP |
 
-Each MCP process is authenticated to **one** `superblocksBaseUrl`. Pass the matching `base_url` on every tool call and invoke the tool from the **matching** server. If the user’s Cursor `mcpServers` keys differ, follow **their** names.
+Each MCP process is authenticated to **one** `superblocksBaseUrl`. Pass the matching `base_url` on every tool call and invoke the tool from the **matching** server. If the user's MCP config (`.mcp.json` for Claude Code, `~/.cursor/mcp.json` for Cursor) uses different `mcpServers` keys, follow **their** names.
 
 ## Principal and resource ID rules
 
