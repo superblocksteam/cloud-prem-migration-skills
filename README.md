@@ -104,32 +104,34 @@ sb_auth_profile list   # sanity check
 
 `sb_auth_profile cloud` exports `SUPERBLOCKS_AUTH_FILE` from `SUPERBLOCKS_CLOUD_AUTH_FILE` in `.env`; `sb_auth_profile cloud_prem` does the same for `SUPERBLOCKS_CLOUD_PREM_AUTH_FILE`. You must `source` the script (not run it) so the variable survives in your shell.
 
-### 5. Configure two Cursor MCP servers (needed for Phases 2 and 3)
+### 5. Configure two MCP servers (needed for Phases 2 and 3)
 
-Add **two** entries to `~/.cursor/mcp.json`, each with its own `SUPERBLOCKS_AUTH_FILE` pointing at the **same absolute paths** in your `.env`:
+Add **two** entries to your AI client's MCP config — `~/.cursor/mcp.json` for Cursor, `.mcp.json` at the repo root for Claude Code. Each entry points at a Superblocks deployment's hosted MCP endpoint (`<base-url>/mcp`) and carries a Bearer token issued by that deployment:
 
 ```json
 {
   "mcpServers": {
     "superblocks-cloud": {
-      "command": "/FULL/PATH/TO/superblocks",
-      "args": ["mcp", "serve"],
-      "env": {
-        "SUPERBLOCKS_AUTH_FILE": "/FULL/PATH/TO/.superblocks/profiles/cloud/auth.json"
+      "url": "https://app.superblocks.com/mcp",
+      "headers": {
+        "Authorization": "Bearer <cloud-api-token>"
       }
     },
     "superblocks-cloud-prem": {
-      "command": "/FULL/PATH/TO/superblocks",
-      "args": ["mcp", "serve"],
-      "env": {
-        "SUPERBLOCKS_AUTH_FILE": "/FULL/PATH/TO/.superblocks/profiles/cloud_prem/auth.json"
+      "url": "https://<your-tenant>.superblocks.com/mcp",
+      "headers": {
+        "Authorization": "Bearer <cloud-prem-api-token>"
       }
     }
   }
 }
 ```
 
-Run `which superblocks` to find the absolute binary path; Cursor's GUI environment often can't resolve `superblocks` on `PATH`. After editing, fully quit and reopen Cursor. Verify each server is healthy by calling `get_auth_status` in Agent chat with the matching `base_url`.
+**Get the tokens** by issuing a personal API access token in each Superblocks deployment's user settings — one for Cloud (use against `app.superblocks.com`, or your regional SaaS URL), one for Cloud Prem (use against `<your-tenant>.superblocks.com`). The tokens are per-deployment and **not** interchangeable.
+
+**Do not commit `mcp.json`** — it contains Bearer tokens. The repo's `.gitignore` doesn't cover Cursor's `~/.cursor/mcp.json` (it lives outside the repo), but Claude Code's `.mcp.json` at the repo root **must** be added to your user-level gitignore (e.g., `~/.config/git/ignore`) or committed only after redacting tokens.
+
+After editing, fully quit and reopen your AI client (Cursor or Claude Code) so both MCP processes connect. Verify each server is healthy by asking the agent to call **`get_auth_status`** on each server with the matching `base_url` (`https://app.superblocks.com/` for Cloud, `https://<your-tenant>.superblocks.com/` for Cloud Prem).
 
 ---
 
@@ -367,14 +369,14 @@ Each phase of the migration is wrapped as an Agent Skill, shipped for both **Cla
 
 When prompting, substitute `.cursor/skills/...` for the path if you're driving the migration in Cursor.
 
-All Phase 1 skills run purely against the SCIM scripts in `scripts/` — no MCP server required. Phase 2 and Phase 3 do use MCP; see [Step 5 — Configure two Cursor MCP servers](#5-configure-two-cursor-mcp-servers-needed-for-phases-2-and-3) (the same MCP servers work for Claude Code — just declare them in Claude Code's `.mcp.json` at the repo root instead of Cursor's `~/.cursor/mcp.json`).
+All Phase 1 skills run purely against the SCIM scripts in `scripts/` — no MCP server required. Phase 2 and Phase 3 do use MCP; see [Step 5 — Configure two MCP servers](#5-configure-two-mcp-servers-needed-for-phases-2-and-3). The same JSON config works for Cursor (`~/.cursor/mcp.json`) and Claude Code (`.mcp.json` at the repo root).
 
 
 ## Common operations
 
 **Re-run a single phase against a different tenant**
 
-Edit `.env` to point `SUPERBLOCKS_CLOUD_PREM_BASE_URL`, `SUPERBLOCKS_CLOUD_PREM_AUTH_FILE`, and `SUPERBLOCKS_SCIM_TOKEN_CLOUD_PREM` at the new tenant. Re-source `sb-auth-profile.sh` so the CLI picks up the new auth path. MCP requires updating `~/.cursor/mcp.json` and restarting Cursor.
+Edit `.env` to point `SUPERBLOCKS_CLOUD_PREM_BASE_URL`, `SUPERBLOCKS_CLOUD_PREM_AUTH_FILE`, and `SUPERBLOCKS_SCIM_TOKEN_CLOUD_PREM` at the new tenant. Re-source `sb-auth-profile.sh` so the CLI picks up the new auth path. MCP requires updating the `url` and `headers.Authorization` Bearer in the `superblocks-cloud-prem` entry of your MCP config (`~/.cursor/mcp.json` for Cursor, `.mcp.json` for Claude Code) and restarting the client.
 
 **Skip the shared `.env` for a single run**
 
@@ -389,9 +391,9 @@ source scripts/sb-auth-profile.sh
 
 ## Security
 
-- **Never commit** `.env`, `~/.superblocks/**/auth.json`, or any token file. The repo's `.gitignore` covers `.env` but not files outside the repo.
+- **Never commit** `.env`, `~/.superblocks/**/auth.json`, any MCP config containing Bearer tokens (`~/.cursor/mcp.json` for Cursor, `.mcp.json` at the repo root for Claude Code), or any token file. The repo's `.gitignore` covers `.env`, but `~/.cursor/mcp.json` lives outside the repo and `.mcp.json` is at the repo root and ships with Bearer tokens — add it to your user-level gitignore (e.g., `~/.config/git/ignore`) or redact tokens before committing.
 - The CLI typically writes `auth.json` at mode 600 on Unix — keep it that way.
-- SCIM tokens are organization-wide. Treat them like API keys: rotate after any exposure (chat paste, log dump, screen share).
+- SCIM tokens are organization-wide. Treat them like API keys: rotate after any exposure (chat paste, log dump, screen share). The same applies to the per-deployment API tokens used as the MCP `Authorization: Bearer` value.
 
 ## Related infrastructure repos
 

@@ -28,7 +28,7 @@ When a Cloud integration used by the app **does not yet exist** on Cloud Prem, t
 ## Prerequisites
 
 - [Superblocks CLI](https://www.npmjs.com/package/@superblocksteam/cli): `npm install -g @superblocksteam/cli`
-- **Two** Superblocks MCP servers configured in your AI client (Claude Code's `.mcp.json` at the repo root, or Cursor's `~/.cursor/mcp.json`; see repo `README.md`): one process authenticated to **Cloud (SaaS)**, one to **Cloud Prem** (`<company>.superblocks.com`), typically via **`SUPERBLOCKS_AUTH_FILE`** in each server's `env`.
+- **Two** Superblocks MCP servers configured in your AI client (Claude Code's `.mcp.json` at the repo root, or Cursor's `~/.cursor/mcp.json`; see repo `README.md` → "Configure two MCP servers"). Each entry is a **remote MCP** — a `url` pointing at the deployment's hosted endpoint (`https://<host>/mcp`) plus a `headers.Authorization` Bearer token issued in that deployment. Two entries total: one for **Cloud (SaaS)**, one for **Cloud Prem** (`<company>.superblocks.com`).
 - Convention for server names in this skill: **`superblocks-cloud`** and **`superblocks-cloud-prem`**. If the user's MCP config uses different keys, follow **their** names and map: Cloud SaaS → Cloud MCP; Cloud Prem host → Cloud Prem MCP.
 
 ## MCP routing (critical)
@@ -40,15 +40,15 @@ Superblocks MCP tools still require a **`base_url`** argument. **Choose the MCP 
 | Superblocks Cloud (SaaS) | `https://app.superblocks.com/` (or regional SaaS URL) | **Cloud** MCP (e.g. `superblocks-cloud`) |
 | Cloud Prem | `https://<company>.superblocks.com/` | **Cloud Prem** MCP (e.g. `superblocks-cloud-prem`) |
 
-Do **not** call Cloud Prem `base_url` tools on the Cloud MCP (or the reverse): each server process only has credentials for one `superblocksBaseUrl` in its `SUPERBLOCKS_AUTH_FILE`.
+Do **not** call Cloud Prem `base_url` tools on the Cloud MCP (or the reverse): each entry is bound to a single deployment via its `url` + Bearer token, and tokens are not interchangeable.
 
 If your MCP client lists duplicate tool names (same tool from two servers), pick the server column / group that matches the row above.
 
-**Connection failed:** often the MCP client (Cursor or Claude Code) cannot find `superblocks` on `PATH`. Use an **absolute** `command` in your MCP config (`.mcp.json` for Claude Code; `~/.cursor/mcp.json` for Cursor) and restart the client (see repo `README.md`).
+**Connection failed:** verify the entry's `url` ends in `/mcp` (e.g. `https://<host>/mcp`) and that the `headers.Authorization` Bearer is a token from that specific deployment. Restart the AI client after editing the config. Common causes are a stale or wrong-deployment Bearer (HTTP 401) and a malformed URL.
 
 ## 1) Two “profiles” (AWS-style) for the CLI
 
-The CLI does **not** ship named profiles. Use **`SUPERBLOCKS_AUTH_FILE`** so each environment has its own `auth.json` (token + `superblocksBaseUrl`), similar to `AWS_PROFILE` + separate credential files. **Reuse the same two auth file paths** as in the two MCP `env` blocks so CLI and MCP stay aligned.
+The CLI does **not** ship named profiles. Use **`SUPERBLOCKS_AUTH_FILE`** so each environment has its own `auth.json` (token + `superblocksBaseUrl`), similar to `AWS_PROFILE` + separate credential files. The CLI auth is **independent** of MCP auth — the CLI's `SUPERBLOCKS_AUTH_FILE` covers `superblocks pull / upload / dev`; MCP uses the `url` + Bearer entry in your AI client's config. The repository `.env` keeps the two CLI auth-file paths (`SUPERBLOCKS_CLOUD_AUTH_FILE` and `SUPERBLOCKS_CLOUD_PREM_AUTH_FILE`) so the `sb_auth_profile` helper can find them.
 
 Suggested layout:
 
