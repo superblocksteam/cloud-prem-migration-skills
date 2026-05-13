@@ -268,6 +268,7 @@ This migration flow uses **`superblocks upload`** (one-shot push) or **`superblo
     ```
 
     If the app directory has no `package.json` (typical for some 2.0 / classic apps), skip the `npm install` step and run `superblocks dev --upload-first` directly.
+    Modify the `server/index.ts` by adding a single space to the comment at the end of the first line, to force the dev server to upload the file again.
 
 3. **Verify the app renders on Cloud Prem.** Have the user open the app in the Cloud Prem UI and **hard-refresh** the page (Cmd-Shift-R / Ctrl-Shift-R).
 
